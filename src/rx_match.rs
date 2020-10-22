@@ -35,7 +35,7 @@ fn matches_string_at_index(
                 return Ok((false, 0));
             }
         }
-        MatcherKind::Group(items) => return Re::new(items).test_internal(&s[1..]),
+        MatcherKind::Group(items) => return Re::new(items).test_internal(&s[i..]),
     }
 }
 
@@ -211,6 +211,7 @@ mod tests {
     #[test]
     fn test_groups() {
         assert_eq!(Ok(Some(5)), test_re("a(bcd)c", "abcdc"));
+        assert_eq!(Ok(Some(5)), test_re("ab(cd)c", "abcdc"));
         assert_eq!(Ok(Some(2)), test_re("a(bcd)?c", "ac"));
     }
 
