@@ -11,7 +11,7 @@ struct Re {
     i: usize,
     queue: VecDeque<Matcher>,
     current_state: Option<Matcher>,
-    backtrackStack: Vec<BacktrackState>,
+    backtrack_stack: Vec<BacktrackState>,
 }
 
 fn matches_string_at_index(
@@ -23,7 +23,7 @@ fn matches_string_at_index(
         return Ok((false, 0));
     }
 
-    match matcher.matcherKind.clone() {
+    match matcher.matcher_kind.clone() {
         // this clone is bad, need to fix later
         MatcherKind::Wildcard => {
             return Ok((true, 1));
@@ -44,7 +44,7 @@ impl Re {
         Self {
             i: 0,
             queue: states.into_iter().collect(),
-            backtrackStack: Vec::new(),
+            backtrack_stack: Vec::new(),
             current_state: None,
         }
     }
@@ -53,12 +53,12 @@ impl Re {
         self.queue.push_front(self.current_state.clone().unwrap());
         let mut could_backtrack = false;
 
-        while self.backtrackStack.len() > 0 {
+        while self.backtrack_stack.len() > 0 {
             let BacktrackState {
                 is_backtrackable,
                 matcher,
                 mut consumptions,
-            } = self.backtrackStack.pop().unwrap();
+            } = self.backtrack_stack.pop().unwrap();
 
             if is_backtrackable {
                 if consumptions.len() == 0 {
@@ -67,7 +67,7 @@ impl Re {
                 } else {
                     let n = consumptions.pop().unwrap();
                     self.i -= n;
-                    self.backtrackStack.push(BacktrackState {
+                    self.backtrack_stack.push(BacktrackState {
                         is_backtrackable,
                         matcher,
                         consumptions,
@@ -104,7 +104,7 @@ impl Re {
                         }
                         continue;
                     }
-                    self.backtrackStack.push(BacktrackState {
+                    self.backtrack_stack.push(BacktrackState {
                         is_backtrackable: false,
                         matcher: self.current_state.clone().unwrap(), // another bad `clone`
                         consumptions: vec![consumed],
@@ -114,7 +114,7 @@ impl Re {
                 }
                 Quantifier::ZeroOrOne => {
                     if self.i >= s.len() {
-                        self.backtrackStack.push(BacktrackState {
+                        self.backtrack_stack.push(BacktrackState {
                             is_backtrackable: false,
                             matcher: self.current_state.clone().unwrap(), // another bad `clone`
                             consumptions: vec![0],
@@ -124,7 +124,7 @@ impl Re {
                     }
                     let (is_match, consumed) = matches_string_at_index(&st, s, self.i)?;
                     self.i += consumed;
-                    self.backtrackStack.push(BacktrackState {
+                    self.backtrack_stack.push(BacktrackState {
                         is_backtrackable: is_match && consumed > 0,
                         matcher: self.current_state.clone().unwrap(), // another bad `clone`
                         consumptions: vec![consumed],
@@ -144,7 +144,7 @@ impl Re {
                                 backtrack_state.is_backtrackable = false;
                                 backtrack_state.consumptions.push(0);
                             }
-                            self.backtrackStack.push(backtrack_state);
+                            self.backtrack_stack.push(backtrack_state);
                             self.current_state = self.queue.pop_front();
                             break;
                         }
@@ -154,7 +154,7 @@ impl Re {
                                 backtrack_state.is_backtrackable = false;
                                 backtrack_state.consumptions.push(0);
                             }
-                            self.backtrackStack.push(backtrack_state);
+                            self.backtrack_stack.push(backtrack_state);
                             self.current_state = self.queue.pop_front();
                             break;
                         }
@@ -168,7 +168,7 @@ impl Re {
     }
 }
 
-pub(crate) fn test_re(re: &str, s: &str) -> Result<Option<usize>, String> {
+pub fn test_re(re: &str, s: &str) -> Result<Option<usize>, String> {
     let chars: Vec<char> = s.chars().collect();
     let match_result = Re::new(parse_re(re)?).test_internal(&chars)?;
     if let (true, i) = match_result {

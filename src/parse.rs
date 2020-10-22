@@ -13,26 +13,26 @@ pub(crate) enum MatcherKind {
 #[derive(Debug, PartialEq, Clone)]
 pub(crate) struct Matcher {
     pub(crate) quantifier: Quantifier,
-    pub(crate) matcherKind: MatcherKind,
+    pub(crate) matcher_kind: MatcherKind,
 }
 
 impl Matcher {
-    pub(crate) fn Wildcard(q: Quantifier) -> Self {
+    pub(crate) fn wildcard(q: Quantifier) -> Self {
         Self {
             quantifier: q,
-            matcherKind: MatcherKind::Wildcard,
+            matcher_kind: MatcherKind::Wildcard,
         }
     }
-    pub(crate) fn Element(c: char, q: Quantifier) -> Self {
+    pub(crate) fn element(c: char, q: Quantifier) -> Self {
         Self {
             quantifier: q,
-            matcherKind: MatcherKind::Element(c),
+            matcher_kind: MatcherKind::Element(c),
         }
     }
-    pub(crate) fn Group(items: Vec<Matcher>, q: Quantifier) -> Self {
+    pub(crate) fn group(items: Vec<Matcher>, q: Quantifier) -> Self {
         Self {
             quantifier: q,
-            matcherKind: MatcherKind::Group(items),
+            matcher_kind: MatcherKind::Group(items),
         }
     }
 }
@@ -47,14 +47,14 @@ pub(crate) fn parse_re(re: &str) -> Result<Vec<Matcher>, String> {
                 stack
                     .last_mut()
                     .unwrap()
-                    .push(Matcher::Wildcard(Quantifier::ExactlyOne));
+                    .push(Matcher::wildcard(Quantifier::ExactlyOne));
                 i += 1;
             }
             '\\' => {
                 if i + 1 >= re.len() {
                     return Err(format!("Bad escape character at index {}", i));
                 }
-                stack.last_mut().unwrap().push(Matcher::Element(
+                stack.last_mut().unwrap().push(Matcher::element(
                     re.chars().nth(i + 1).unwrap(),
                     Quantifier::ExactlyOne,
                 ));
@@ -72,7 +72,7 @@ pub(crate) fn parse_re(re: &str) -> Result<Vec<Matcher>, String> {
                 stack
                     .last_mut()
                     .unwrap()
-                    .push(Matcher::Group(states, Quantifier::ExactlyOne));
+                    .push(Matcher::group(states, Quantifier::ExactlyOne));
                 i += 1;
             }
             '?' => {
@@ -113,7 +113,7 @@ pub(crate) fn parse_re(re: &str) -> Result<Vec<Matcher>, String> {
                 stack
                     .last_mut()
                     .unwrap()
-                    .push(Matcher::Element(next, Quantifier::ExactlyOne));
+                    .push(Matcher::element(next, Quantifier::ExactlyOne));
                 i += 1;
             }
         }
@@ -135,7 +135,7 @@ mod tests {
     #[test]
     fn single_char() {
         assert_eq!(
-            Ok(vec![Matcher::Element('a', Quantifier::ExactlyOne)]),
+            Ok(vec![Matcher::element('a', Quantifier::ExactlyOne)]),
             parse_re("a")
         );
     }
@@ -143,9 +143,9 @@ mod tests {
     fn sequence() {
         assert_eq!(
             Ok(vec![
-                Matcher::Element('a', Quantifier::ExactlyOne),
-                Matcher::Element('b', Quantifier::ExactlyOne),
-                Matcher::Element('c', Quantifier::ExactlyOne)
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::element('b', Quantifier::ExactlyOne),
+                Matcher::element('c', Quantifier::ExactlyOne)
             ]),
             parse_re("abc")
         );
@@ -154,9 +154,9 @@ mod tests {
     fn zero_or_one() {
         assert_eq!(
             Ok(vec![
-                Matcher::Element('a', Quantifier::ExactlyOne),
-                Matcher::Element('b', Quantifier::ZeroOrOne),
-                Matcher::Element('c', Quantifier::ExactlyOne)
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::element('b', Quantifier::ZeroOrOne),
+                Matcher::element('c', Quantifier::ExactlyOne)
             ]),
             parse_re("ab?c")
         );
@@ -165,9 +165,9 @@ mod tests {
     fn zero_or_more() {
         assert_eq!(
             Ok(vec![
-                Matcher::Element('a', Quantifier::ExactlyOne),
-                Matcher::Element('b', Quantifier::ZeroOrMore),
-                Matcher::Element('c', Quantifier::ExactlyOne)
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::element('b', Quantifier::ZeroOrMore),
+                Matcher::element('c', Quantifier::ExactlyOne)
             ]),
             parse_re("ab*c")
         );
@@ -176,10 +176,10 @@ mod tests {
     fn one_or_more() {
         assert_eq!(
             Ok(vec![
-                Matcher::Element('a', Quantifier::ExactlyOne),
-                Matcher::Element('b', Quantifier::ExactlyOne),
-                Matcher::Element('b', Quantifier::ZeroOrMore),
-                Matcher::Element('c', Quantifier::ExactlyOne)
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::element('b', Quantifier::ExactlyOne),
+                Matcher::element('b', Quantifier::ZeroOrMore),
+                Matcher::element('c', Quantifier::ExactlyOne)
             ]),
             parse_re("ab+c")
         );
