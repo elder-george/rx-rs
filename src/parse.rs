@@ -184,4 +184,29 @@ mod tests {
             parse_re("ab+c")
         );
     }
+
+    #[test]
+    fn group() {
+        assert_eq!(
+            Ok(vec![
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::group(Vec::new(), Quantifier::ExactlyOne)
+            ]),
+            parse_re("a()")
+        );
+        assert_eq!(
+            Ok(vec![
+                Matcher::element('a', Quantifier::ExactlyOne),
+                Matcher::group(
+                    vec![
+                        Matcher::element('b', Quantifier::ExactlyOne),
+                        Matcher::element('c', Quantifier::ExactlyOne),
+                    ],
+                    Quantifier::ZeroOrOne
+                ),
+                Matcher::element('d', Quantifier::ExactlyOne),
+            ]),
+            parse_re("a(bc)?d")
+        );
+    }
 }
