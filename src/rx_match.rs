@@ -22,7 +22,7 @@ fn matches_string_at_index(
                 return Ok((false, 0));
             }
         }
-        MatcherKind::Group(items) => return test_internal(items, s),
+        MatcherKind::Group(items) => return test_internal(items, s[1..]),,
     }
 }
 
@@ -110,9 +110,9 @@ mod tests {
         assert_eq!(Ok(Some(10)), test_re("ab*c*", "abbbbbcccc"));
     }
 
-    // this test requires backtracking to be implemented.
-    // #[test]
-    // fn test_backtracking() {
-    //     assert_eq!(Ok(Some(3)), test_re("a.*c", "abc"));
-    // }
+    #[test]
+    fn test_groups() {
+        assert_eq!(Ok(Some(5)), test_re("a(bcd)c", "abcdc"));
+        assert_eq!(Ok(Some(2)), test_re("a(bcd)?c", "ac"));
+    }
 }
