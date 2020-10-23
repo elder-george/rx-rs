@@ -1,5 +1,4 @@
 use crate::parse::{parse_re, Matcher, MatcherKind, Quantifier};
-use std::collections::VecDeque;
 
 struct BacktrackState {
     is_backtrackable: bool,
@@ -9,7 +8,7 @@ struct BacktrackState {
 
 struct Re {
     i: usize,
-    queue: VecDeque<Matcher>,
+    matcher_stack: Vec<Matcher>,
     current_state: Option<Matcher>,
     backtrack_stack: Vec<BacktrackState>,
 }
@@ -43,14 +42,14 @@ impl Re {
     fn new(states: Vec<Matcher>) -> Self {
         Self {
             i: 0,
-            queue: states.into_iter().collect(),
+            matcher_stack: states.into_iter().rev().collect(),
             backtrack_stack: Vec::new(),
             current_state: None,
         }
     }
 
     fn backtrack(&mut self) -> bool {
-        self.queue.push_front(self.current_state.clone().unwrap());
+        self.matcher_stack.push(self.current_state.clone().unwrap());
         let mut could_backtrack = false;
 
         while self.backtrack_stack.len() > 0 {
@@ -62,7 +61,7 @@ impl Re {
 
             if is_backtrackable {
                 if consumptions.len() == 0 {
-                    self.queue.push_front(matcher);
+                    self.matcher_stack.push(matcher);
                     continue;
                 } else {
                     let n = consumptions.pop().unwrap();
@@ -76,20 +75,20 @@ impl Re {
                     break;
                 }
             }
-            self.queue.push_front(matcher);
+            self.matcher_stack.push(matcher);
             for n in consumptions {
                 self.i -= n;
             }
         }
 
         if could_backtrack {
-            self.current_state = self.queue.pop_front();
+            self.current_state = self.matcher_stack.pop();
         }
         could_backtrack
     }
 
     fn test_internal(&mut self, s: &[char]) -> Result<(bool, usize), String> {
-        self.current_state = self.queue.pop_front();
+        self.current_state = self.matcher_stack.pop();
 
         while self.current_state.is_some() {
             let st = self.current_state.as_ref().unwrap();
@@ -110,7 +109,7 @@ impl Re {
                         consumptions: vec![consumed],
                     });
                     self.i += consumed;
-                    self.current_state = self.queue.pop_front();
+                    self.current_state = self.matcher_stack.pop();
                 }
                 Quantifier::ZeroOrOne => {
                     if self.i >= s.len() {
@@ -119,7 +118,7 @@ impl Re {
                             matcher: self.current_state.clone().unwrap(), // another bad `clone`
                             consumptions: vec![0],
                         });
-                        self.current_state = self.queue.pop_front();
+                        self.current_state = self.matcher_stack.pop();
                         continue;
                     }
                     let (is_match, consumed) = matches_string_at_index(&st, s, self.i)?;
@@ -129,7 +128,7 @@ impl Re {
                         matcher: self.current_state.clone().unwrap(), // another bad `clone`
                         consumptions: vec![consumed],
                     });
-                    self.current_state = self.queue.pop_front();
+                    self.current_state = self.matcher_stack.pop();
                     continue;
                 }
                 Quantifier::ZeroOrMore => {
@@ -145,7 +144,7 @@ impl Re {
                                 backtrack_state.consumptions.push(0);
                             }
                             self.backtrack_stack.push(backtrack_state);
-                            self.current_state = self.queue.pop_front();
+                            self.current_state = self.matcher_stack.pop();
                             break;
                         }
                         let (is_match, consumed) = matches_string_at_index(&st, s, self.i)?;
@@ -155,7 +154,7 @@ impl Re {
                                 backtrack_state.consumptions.push(0);
                             }
                             self.backtrack_stack.push(backtrack_state);
-                            self.current_state = self.queue.pop_front();
+                            self.current_state = self.matcher_stack.pop();
                             break;
                         }
                         backtrack_state.consumptions.push(consumed);
