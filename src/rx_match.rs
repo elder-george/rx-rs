@@ -22,13 +22,12 @@ fn matches_string_at_index(
         return Ok((false, 0));
     }
 
-    match matcher.matcher_kind.clone() {
-        // this clone is bad, need to fix later
+    match &matcher.matcher_kind {
         MatcherKind::Wildcard => {
             return Ok((true, 1));
         }
         MatcherKind::Element(c) => {
-            if c == s[i] {
+            if *c == s[i] {
                 return Ok((true, 1));
             } else {
                 return Ok((false, 0));
@@ -39,10 +38,10 @@ fn matches_string_at_index(
 }
 
 impl Re {
-    fn new(states: Vec<Matcher>) -> Self {
+    fn new(states: &Vec<Matcher>) -> Self {
         Self {
             i: 0,
-            matcher_stack: states.into_iter().rev().collect(),
+            matcher_stack: (states).into_iter().rev().map(|it| it.clone()).collect(),
             backtrack_stack: Vec::new(),
             current_state: None,
         }
@@ -169,7 +168,7 @@ impl Re {
 
 pub fn test_re(re: &str, s: &str) -> Result<Option<usize>, String> {
     let chars: Vec<char> = s.chars().collect();
-    let match_result = Re::new(parse_re(re)?).test_internal(&chars)?;
+    let match_result = Re::new(&parse_re(re)?).test_internal(&chars)?;
     if let (true, i) = match_result {
         Ok(Some(i))
     } else {
